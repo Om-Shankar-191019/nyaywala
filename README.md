@@ -16,8 +16,15 @@ The first frontend milestone is complete:
 - Responsive mobile layout
 - Reusable inline SVG icons
 - Existing hero illustration integrated
+- Responsive application shell prototype
+- Instructor workspace sidebar and navigation
+- Overview dashboard with assignment and submission statistics
+- Recent assignments panel
+- Quick-start assignment panel
+- Sandbox security notice
+- Landing-page CTAs connected to the application shell
 
-The grading engine, authentication, dashboard, database, and isolated code-execution worker are planned for subsequent phases.
+The application shell currently uses representative frontend data. Authentication, dashboard persistence, assignment APIs, database integration, and the isolated code-execution worker are planned for subsequent phases.
 
 ## Technology stack
 
@@ -100,6 +107,40 @@ POST /api/grade
 
 The `/api/grade` endpoint is currently a placeholder and does not yet execute or analyze C programs.
 
+## Frontend experience
+
+The current frontend has two connected experiences:
+
+### Public landing page
+
+The landing page explains Nyaywala's purpose and includes:
+
+- Hero section with primary and secondary calls to action
+- Safe execution, editable rules, and actionable feedback feature cards
+- Three-step grading workflow
+- Platform metrics
+- Final call-to-action section
+- Responsive footer
+
+### Application shell prototype
+
+The landing-page actions open the current instructor workspace prototype. It includes:
+
+- Workspace switcher
+- Sidebar navigation for Overview, Assignments, Submissions, and Rule sets
+- Settings and return-to-website actions
+- Breadcrumbs and instructor profile area
+- Search and notification controls
+- Active assignments statistic
+- Total submissions statistic
+- Average score statistic
+- Submissions needing review statistic
+- Recent assignments list
+- Quick-start assignment card
+- Sandbox security notice
+
+The dashboard values, assignment actions, search, notifications, profile controls, and navigation pages are currently presentation-only. They will be connected to backend APIs as the product is implemented.
+
 ## Deployment
 
 The repository includes [vercel.json](./vercel.json) for routing frontend traffic and `/api` traffic to their respective services.
@@ -117,10 +158,13 @@ Before deploying:
 ### Phase 1: Frontend foundation
 
 - [x] Build the public landing page
-- [ ] Add the application shell
-- [ ] Add dashboard layouts
-- [ ] Add navigation, loading, empty, and error states
+- [x] Add the application shell prototype
+- [x] Add the initial dashboard layout
+- [x] Add workspace navigation and responsive shell states
+- [ ] Connect dashboard data to backend APIs
+- [ ] Add functional loading, empty, and error states
 - [ ] Add authentication screens
+- [ ] Add protected application routes
 
 ### Phase 2: Assignment and rules
 
