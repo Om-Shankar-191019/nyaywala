@@ -47,6 +47,12 @@ nyaywala/
 ├── frontend/
 │   ├── src/
 │   │   ├── assets/
+│   │   ├── components/
+│   │   │   ├── common/
+│   │   │   ├── landing/
+│   │   │   └── shell/
+│   │   ├── data/
+│   │   ├── pages/
 │   │   ├── App.css
 │   │   ├── App.jsx
 │   │   ├── index.css
@@ -141,6 +147,42 @@ The landing-page actions open the current instructor workspace prototype. It inc
 
 The dashboard values, assignment actions, search, notifications, profile controls, and navigation pages are currently presentation-only. They will be connected to backend APIs as the product is implemented.
 
+## Frontend architecture
+
+The frontend follows a feature-oriented component structure rather than keeping the entire interface in `App.jsx`:
+
+```text
+frontend/src/
+├── components/
+│   ├── common/
+│   │   ├── Brand.jsx
+│   │   └── Icon.jsx
+│   ├── landing/
+│   │   └── LandingPage.jsx
+│   └── shell/
+│       ├── AppShell.jsx
+│       ├── Dashboard.jsx
+│       ├── Sidebar.jsx
+│       └── Topbar.jsx
+├── data/
+│   └── landing.js
+├── pages/
+│   ├── DashboardPage.jsx
+│   └── LandingPage.jsx
+└── App.jsx
+```
+
+Responsibilities are intentionally separated:
+
+- `App.jsx` owns the temporary landing/dashboard view switch.
+- `pages/` provides page-level composition boundaries.
+- `components/landing/` contains public marketing UI.
+- `components/shell/` contains authenticated workspace UI.
+- `components/common/` contains reusable visual primitives.
+- `data/` contains static presentation data until API services are connected.
+
+The current view switch will later be replaced with a real router and protected routes when authentication is introduced.
+
 ## Deployment
 
 The repository includes [vercel.json](./vercel.json) for routing frontend traffic and `/api` traffic to their respective services.
@@ -161,6 +203,8 @@ Before deploying:
 - [x] Add the application shell prototype
 - [x] Add the initial dashboard layout
 - [x] Add workspace navigation and responsive shell states
+- [x] Split landing page and shell into feature-based components
+- [x] Extract shared icons and branding primitives
 - [ ] Connect dashboard data to backend APIs
 - [ ] Add functional loading, empty, and error states
 - [ ] Add authentication screens
