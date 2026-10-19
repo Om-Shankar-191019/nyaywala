@@ -2,40 +2,50 @@
 
 > A rule-driven evaluator for automated C-program grading.
 
-Nyaywala is being built to help instructors evaluate C-program submissions consistently and give students useful, evidence-based feedback. The long-term platform will compile and run submissions safely, apply instructor-defined grading rules, analyze multiple code-quality metrics, and generate reproducible reports.
+Nyaywala accepts a C program and instructor-defined grading rules, then produces a reproducible report. The first version intentionally focuses on the grading workflow rather than building a complete college portal.
 
-## Current milestone
+## First-version scope
 
-The first frontend milestone is complete:
+The frontend now provides one evaluation workspace with four steps:
 
-- Responsive Nyaywala landing page
-- Product positioning and call-to-action sections
-- Feature overview
-- Three-step workflow explanation
-- Trust and platform metrics
-- Responsive mobile layout
-- Reusable inline SVG icons
-- Existing hero illustration integrated
-- Responsive application shell prototype
-- Instructor workspace sidebar and navigation
-- Overview dashboard with assignment and submission statistics
-- Recent assignments panel
-- Quick-start assignment panel
-- Sandbox security notice
-- Landing-page CTAs connected to the application shell
+1. **Problem setup** - enter the problem statement and trusted input/expected-output test cases.
+2. **Rules configuration** - edit analyzer weights and execution limits separately from the student code.
+3. **Code submission** - paste C source or upload a `.c` file.
+4. **Grade report** - view the overall score, metric results, test evidence, and reproducibility notes.
 
-The application shell currently uses representative frontend data. Authentication, dashboard persistence, assignment APIs, database integration, and the isolated code-execution worker are planned for subsequent phases.
+The four primary grading concepts are kept separate:
+
+```text
+Problem data + grading rules + student C code -> evaluation report
+```
+
+Authentication, student and instructor accounts, enrollment, assignment deadlines, persistent submission history, and grade-release controls are intentionally deferred to a later version. The component boundaries are ready for those features to be added around the evaluation workspace.
+
+## Mandatory evaluator capabilities
+
+The backend implementation will connect the workspace to these capabilities:
+
+- C compilation with compiler-error reporting
+- Safe execution with time, memory, process, and network limits
+- Correctness testing against trusted outputs
+- Separate correctness, structure, complexity, and memory-safety analyzers
+- Configurable weighted scoring
+- Specific feedback containing failed inputs and expected versus actual output
+- Reproducible grading from the same code, rules, and test data
+- Additional analysis such as memory errors and originality flags
+- A final metric-by-metric grading report
+
+The current `/api/grade` endpoint is still a placeholder. The frontend uses local state and a demonstration report until the compiler and sandbox worker are connected.
 
 ## Technology stack
 
 - **Frontend:** React, Vite, Tailwind CSS
 - **Backend:** Node.js and Express
-- **Planned database:** PostgreSQL
-- **Planned file storage:** Vercel Blob, S3, or Supabase Storage
-- **Planned code execution:** Judge0 or a dedicated isolated Docker worker
-- **Hosting:** Vercel for the frontend and API orchestration
+- **Planned persistence:** PostgreSQL or file-backed assignment configurations
+- **Planned execution:** Judge0 or a dedicated isolated Docker worker
+- **Hosting:** Vercel for frontend and API orchestration
 
-> Uploaded C programs must not be executed directly inside the Vercel/Express process. Production grading will use a separate sandboxed execution service or worker with strict CPU, memory, process, network, file, and timeout limits.
+> Uploaded programs must never be executed directly inside the Vercel or Express request process. Production grading must use a separate sandboxed worker with strict CPU, memory, process, file, network, and timeout limits.
 
 ## Project structure
 
@@ -46,54 +56,50 @@ nyaywala/
 │   └── package.json
 ├── frontend/
 │   ├── src/
-│   │   ├── assets/
 │   │   ├── components/
 │   │   │   ├── common/
-│   │   │   ├── landing/
-│   │   │   └── shell/
-│   │   ├── data/
+│   │   │   ├── landing/       # reusable marketing components
+│   │   │   └── shell/         # legacy shell components for later reuse
 │   │   ├── pages/
+│   │   │   ├── GradingWorkspacePage.jsx
+│   │   │   └── ...
 │   │   ├── App.css
 │   │   ├── App.jsx
-│   │   ├── index.css
-│   │   └── main.jsx
+│   │   └── index.css
 │   ├── package.json
 │   └── vite.config.js
 ├── vercel.json
 └── README.md
 ```
 
-## Run the frontend locally
+The grading workspace currently lives in `frontend/src/pages/GradingWorkspacePage.jsx`. Its local sections are deliberately separated so they can later become `ProblemSetup`, `RulesEditor`, `CodeSubmission`, and `GradeReport` components backed by APIs.
+
+## Run locally
 
 ### Requirements
 
 - Node.js 18 or newer
 - npm
+- GCC or another C compiler for the future local evaluator
 
-### Installation
+### Frontend
 
 ```powershell
 cd frontend
 npm install
-```
-
-### Development server
-
-```powershell
 npm run dev
 ```
 
-The Vite development server will start at the URL shown in the terminal, normally `http://localhost:5173`.
+Open the URL shown by Vite, normally `http://localhost:5173`.
 
-### Production validation
+Validation commands:
 
 ```powershell
 npm run lint
 npm run build
-npm run preview
 ```
 
-## Run the backend locally
+### Backend
 
 ```powershell
 cd backend
@@ -101,9 +107,9 @@ npm install
 npm start
 ```
 
-The Express server runs on port `5000` by default. You can change it with the `PORT` environment variable.
+The Express server runs on port `5000` by default.
 
-Available starter endpoints:
+Starter endpoints:
 
 ```text
 GET  /
@@ -111,179 +117,66 @@ GET  /api/health
 POST /api/grade
 ```
 
-The `/api/grade` endpoint is currently a placeholder and does not yet execute or analyze C programs.
+The `/api/grade` endpoint currently returns a placeholder response and does not compile or execute source code yet.
 
-## Frontend experience
+## Planned grading request
 
-The current frontend has two connected experiences:
+The eventual grading request should contain the two primary engine inputs and their supporting problem data:
 
-### Public landing page
-
-The landing page explains Nyaywala's purpose and includes:
-
-- Hero section with primary and secondary calls to action
-- Safe execution, editable rules, and actionable feedback feature cards
-- Three-step grading workflow
-- Platform metrics
-- Final call-to-action section
-- Responsive footer
-
-### Application shell prototype
-
-The landing-page actions open the current instructor workspace prototype. It includes:
-
-- Workspace switcher
-- Sidebar navigation for Overview, Assignments, Submissions, and Rule sets
-- Settings and return-to-website actions
-- Breadcrumbs and instructor profile area
-- Search and notification controls
-- Active assignments statistic
-- Total submissions statistic
-- Average score statistic
-- Submissions needing review statistic
-- Recent assignments list
-- Quick-start assignment card
-- Sandbox security notice
-
-The dashboard values, assignment actions, search, notifications, profile controls, and navigation pages are currently presentation-only. They will be connected to backend APIs as the product is implemented.
-
-## Frontend architecture
-
-The frontend follows a feature-oriented component structure rather than keeping the entire interface in `App.jsx`:
-
-```text
-frontend/src/
-├── components/
-│   ├── common/
-│   │   ├── Brand.jsx
-│   │   └── Icon.jsx
-│   ├── landing/
-│   │   └── LandingPage.jsx
-│   └── shell/
-│       ├── AppShell.jsx
-│       ├── Dashboard.jsx
-│       ├── Sidebar.jsx
-│       └── Topbar.jsx
-├── data/
-│   └── landing.js
-├── pages/
-│   ├── DashboardPage.jsx
-│   └── LandingPage.jsx
-└── App.jsx
+```json
+{
+  "submission": {
+    "filename": "solution.c",
+    "source": "#include <stdio.h>..."
+  },
+  "problem": {
+    "id": "sum-two-integers",
+    "statement": "Read two integers and print their sum.",
+    "testCases": [
+      { "input": "2 3\n", "expectedOutput": "5\n" }
+    ]
+  },
+  "rules": {
+    "metrics": {
+      "correctness": 60,
+      "codeStructure": 15,
+      "complexity": 10,
+      "memorySafety": 15
+    },
+    "limits": {
+      "timeoutMs": 2000,
+      "memoryMb": 128
+    }
+  }
+}
 ```
 
-Responsibilities are intentionally separated:
+The final report should include the score, individual analyzer results, compiler/runtime status, failed test cases, expected versus actual output, feedback, and reproducibility metadata such as code/rules/test-data hashes and analyzer versions.
 
-- `App.jsx` owns the temporary landing/dashboard view switch.
-- `pages/` provides page-level composition boundaries.
-- `components/landing/` contains public marketing UI.
-- `components/shell/` contains authenticated workspace UI.
-- `components/common/` contains reusable visual primitives.
-- `data/` contains static presentation data until API services are connected.
+## Roadmap
 
-The current view switch will later be replaced with a real router and protected routes when authentication is introduced.
+### Phase 1: Grading workspace
 
-## Deployment
+- [x] Problem setup interface
+- [x] Trusted test-case editor
+- [x] Editable analyzer weights
+- [x] Execution-limit controls
+- [x] C-file upload and source editor
+- [x] Report layout and reproducibility explanation
+- [ ] Connect the frontend to `/api/grade`
+- [ ] Implement compilation and compiler diagnostics
+- [ ] Implement isolated execution
+- [ ] Implement correctness and code analyzers
+- [ ] Persist sample rules and problem data
 
-The repository includes [vercel.json](./vercel.json) for routing frontend traffic and `/api` traffic to their respective services.
+### Phase 2: Platform features
 
-Before deploying:
+- [ ] Assignment and rules persistence
+- [ ] Authentication and protected routes
+- [ ] Student and instructor roles
+- [ ] Submission history
+- [ ] Enrollment, deadlines, and grade-release controls
 
-1. Push the repository to GitHub.
-2. Import the repository into Vercel.
-3. Configure the project and environment variables in Vercel.
-4. Deploy the `develop` branch for development previews.
-5. Promote a tested release to `main` when the project is ready for production.
+## Assignment deliverables
 
-## Planned product roadmap
-
-### Phase 1: Frontend foundation
-
-- [x] Build the public landing page
-- [x] Add the application shell prototype
-- [x] Add the initial dashboard layout
-- [x] Add workspace navigation and responsive shell states
-- [x] Split landing page and shell into feature-based components
-- [x] Extract shared icons and branding primitives
-- [ ] Connect dashboard data to backend APIs
-- [ ] Add functional loading, empty, and error states
-- [ ] Add authentication screens
-- [ ] Add protected application routes
-
-### Phase 2: Assignment and rules
-
-- [ ] Add instructor assignment creation
-- [ ] Add editable, versioned JSON rule sets
-- [ ] Add test-case management
-- [ ] Add role-based access control
-- [ ] Add database persistence
-
-### Phase 3: Core grading engine
-
-- [ ] Add C-file upload and SHA-256 hashing
-- [ ] Add grading jobs and progress states
-- [ ] Add isolated compilation and execution
-- [ ] Add time and memory limits
-- [ ] Add correctness testing
-- [ ] Show failing input, expected output, and actual output
-
-### Phase 4: Specialist analyzers
-
-- [ ] Compiler-warning analyzer
-- [ ] Static structure analyzer
-- [ ] Modularity analyzer
-- [ ] Edge-case analyzer
-- [ ] Complexity estimator
-- [ ] AddressSanitizer and UndefinedBehaviorSanitizer checks
-- [ ] Readability analysis
-- [ ] Similarity/originality flags
-
-### Phase 5: Reports and delivery
-
-- [ ] Generate machine-readable JSON reports
-- [ ] Generate student-facing reports
-- [ ] Add report downloads
-- [ ] Add retries and failure handling
-- [ ] Add audit logs
-- [ ] Add integration and end-to-end tests
-- [ ] Document usefulness and limitations
-
-## Reproducible grading goal
-
-Nyaywala is designed around the following contract:
-
-```text
-same source + same rules + same tests + same analyzer versions
-= same grade
-```
-
-Each final report should preserve:
-
-- Submission hash
-- Rules snapshot and rules hash
-- Test cases used
-- Compiler and analyzer versions
-- Compiler flags
-- Runtime limits
-- Raw diagnostics and evidence
-- Final weighted score
-
-## Contributing
-
-1. Create a feature branch from `develop`.
-2. Make focused changes.
-3. Run the frontend lint and build checks.
-4. Test the relevant backend behavior.
-5. Open a pull request into `develop`.
-
-Example:
-
-```powershell
-git checkout develop
-git pull origin develop
-git checkout -b feature/your-feature
-```
-
-## License
-
-This project is currently under development. Add the project license before the first public release.
+The project should also include sample grading outputs, a discussion of usefulness and limitations with three to four examples each, a public GitHub repository, an installation guide, and a 15-20 minute demonstration video.
