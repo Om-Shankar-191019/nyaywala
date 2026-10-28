@@ -35,7 +35,21 @@ The backend implementation will connect the workspace to these capabilities:
 - Additional analysis such as memory errors and originality flags
 - A final metric-by-metric grading report
 
-The current `/api/grade` endpoint is still a placeholder. The frontend uses local state and a demonstration report until the compiler and sandbox worker are connected.
+The `/api/grade` endpoint now compiles C submissions with GCC and returns structured compiler diagnostics. Runtime execution and analyzer workers remain separate follow-up milestones.
+
+## Roadmap status: Days 1-3
+
+The first three roadmap days are implemented as follows:
+
+- **Day 1:** The architecture is React/Vite plus an Express API on Vercel, with external sandbox execution planned and no database or Docker dependency in the first version. The execution-service URL and secret remain backend-only environment configuration when that provider is connected.
+- **Day 2:** [`backend/contract.js`](./backend/contract.js) defines the shared request normalization, validation limits, and explicit report statuses. `/api/grade` returns stable `compilation`, `runtime`, `testResults`, `metrics`, `feedback`, `rules`, and `reproducibility` sections, including an explicit analyzer limitation while runtime/analyzers are not connected.
+- **Day 3:** The problem setup screen validates title, statement, and every trusted test case; supports adding and removing test cases; shows field-level messages; and blocks progression until at least one complete test case exists.
+
+Days 4 onward remain intentionally pending: isolated execution, runtime correctness comparison, analyzer implementation, scoring, hashes, and persistent data are not represented as complete until implemented.
+
+Copy [`backend/.env.example`](./backend/.env.example) to a private backend environment when an external execution provider is selected. Never put `EXECUTION_SERVICE_SECRET` in frontend code or expose it through Vite.
+
+Day 4 is now implemented in the workspace: metric weights are restricted to whole numbers from 0-100 and must total exactly 100; timeout and memory limits have bounded validation; C uploads validate the `.c` extension and source size; the editor has the same source-size limit; and evaluation is blocked until problem, rules, and submission validation all pass.
 
 ## Technology stack
 
@@ -80,7 +94,7 @@ The grading workspace currently lives in `frontend/src/pages/GradingWorkspacePag
 
 - Node.js 18 or newer
 - npm
-- GCC or another C compiler for the future local evaluator
+- GCC available on `PATH`, or set the backend `C_COMPILER` environment variable
 
 ### Frontend
 
@@ -117,7 +131,17 @@ GET  /api/health
 POST /api/grade
 ```
 
-The `/api/grade` endpoint currently returns a placeholder response and does not compile or execute source code yet.
+`POST /api/grade` accepts the submission, problem test cases, and rules payload described below. It writes the source to a temporary directory, invokes GCC with warnings enabled, returns compiler diagnostics, and removes the temporary files. It does not execute the compiled program yet.
+
+For local development, start the backend before the frontend:
+
+```powershell
+cd backend
+npm install
+npm start
+```
+
+On Windows, install GCC through MinGW-w64 or MSYS2 and verify `gcc --version` works in the same terminal.
 
 ## Planned grading request
 
