@@ -7,6 +7,8 @@ const path = require("node:path");
 const { promisify } = require("node:util");
 const {
   GRADE_STATUSES,
+  MAX_REQUEST_BYTES,
+  createReproducibility,
   normalizeRequest,
   validateGradeRequest,
 } = require("./contract");
@@ -17,7 +19,7 @@ const compiler = process.env.C_COMPILER || "gcc";
 const compileTimeoutMs = 10000;
 
 app.use(cors());
-app.use(express.json({ limit: "256kb" }));
+app.use(express.json({ limit: MAX_REQUEST_BYTES }));
 
 // Root route handler
 app.get("/", (req, res) => {
@@ -44,6 +46,7 @@ app.post("/api/grade", async (req, res) => {
 
   const request = normalizeRequest(req.body);
   const { submission, problem, rules } = request;
+  const reproducibility = createReproducibility(request);
   const source = submission.source;
   const temporaryDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "nyaywala-"));
   const sourcePath = path.join(temporaryDirectory, "submission.c");
@@ -82,7 +85,7 @@ app.post("/api/grade", async (req, res) => {
         metrics: {},
         feedback: timedOut ? "Compilation exceeded the compiler time limit." : "Fix the compiler errors before execution can begin.",
         rules: rules || {},
-        reproducibility: { sourceHash: null, testDataHash: null, rulesHash: null, requestHash: null },
+        reproducibility,
       });
     }
 
@@ -99,7 +102,7 @@ app.post("/api/grade", async (req, res) => {
       metrics: {},
       feedback: "Compilation succeeded. Runtime execution is not enabled yet.",
       rules: rules || {},
-      reproducibility: { sourceHash: null, testDataHash: null, rulesHash: null, requestHash: null },
+      reproducibility,
     });
   } catch (error) {
     console.error("Grading request failed:", error);
@@ -107,6 +110,24 @@ app.post("/api/grade", async (req, res) => {
   } finally {
     await fs.rm(temporaryDirectory, { recursive: true, force: true });
   }
+});
+
+app.use((error, req, res, next) => {
+  if (error.type === "entity.too.large") {
+    return res.status(413).json({
+      success: false,
+      status: GRADE_STATUSES.VALIDATION_FAILED,
+      errors: [{ field: "request", message: `Request body must be at most ${MAX_REQUEST_BYTES} bytes.` }],
+    });
+  }
+  if (error instanceof SyntaxError && error.status === 400 && error.body) {
+    return res.status(400).json({
+      success: false,
+      status: GRADE_STATUSES.VALIDATION_FAILED,
+      errors: [{ field: "request", message: "Request body must contain valid JSON." }],
+    });
+  }
+  return next(error);
 });
 
 // For local testing: run standalone server if not hosted on Vercel

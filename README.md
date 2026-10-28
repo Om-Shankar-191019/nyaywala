@@ -37,19 +37,25 @@ The backend implementation will connect the workspace to these capabilities:
 
 The `/api/grade` endpoint now compiles C submissions with GCC and returns structured compiler diagnostics. Runtime execution and analyzer workers remain separate follow-up milestones.
 
-## Roadmap status: Days 1-3
+## Roadmap status: Days 1-5
 
-The first three roadmap days are implemented as follows:
+The first five roadmap days are implemented as follows:
 
 - **Day 1:** The architecture is React/Vite plus an Express API on Vercel, with external sandbox execution planned and no database or Docker dependency in the first version. The execution-service URL and secret remain backend-only environment configuration when that provider is connected.
 - **Day 2:** [`backend/contract.js`](./backend/contract.js) defines the shared request normalization, validation limits, and explicit report statuses. `/api/grade` returns stable `compilation`, `runtime`, `testResults`, `metrics`, `feedback`, `rules`, and `reproducibility` sections, including an explicit analyzer limitation while runtime/analyzers are not connected.
 - **Day 3:** The problem setup screen validates title, statement, and every trusted test case; supports adding and removing test cases; shows field-level messages; and blocks progression until at least one complete test case exists.
+- **Day 4:** The rules screen validates metric weights, timeout and memory limits, C-file uploads, source size, and prevents evaluation until all required inputs are valid.
+- **Day 5:** The backend independently validates and normalizes requests, enforces size limits, returns structured errors, and includes deterministic SHA-256 reproducibility hashes.
 
-Days 4 onward remain intentionally pending: isolated execution, runtime correctness comparison, analyzer implementation, scoring, hashes, and persistent data are not represented as complete until implemented.
+Days 6 onward remain intentionally pending: external isolated execution, runtime correctness comparison, analyzer implementation, scoring, and persistent data are not represented as complete until implemented.
 
 Copy [`backend/.env.example`](./backend/.env.example) to a private backend environment when an external execution provider is selected. Never put `EXECUTION_SERVICE_SECRET` in frontend code or expose it through Vite.
 
 Day 4 is now implemented in the workspace: metric weights are restricted to whole numbers from 0-100 and must total exactly 100; timeout and memory limits have bounded validation; C uploads validate the `.c` extension and source size; the editor has the same source-size limit; and evaluation is blocked until problem, rules, and submission validation all pass.
+
+### Day 5: Backend validation and reproducibility
+
+Week 1 is complete. The backend now independently validates every grading request, normalizes CRLF/CR line endings to LF, enforces request-size, source-size, test-count, per-field, and combined test-data limits, and validates metric weights and execution limits. It returns specific structured HTTP 400 validation errors (or HTTP 413 for an oversized request). Accepted requests include SHA-256 hashes for the normalized source, test data, rules, and complete request in `reproducibility`.
 
 ## Technology stack
 
@@ -67,6 +73,8 @@ Day 4 is now implemented in the workspace: metric weights are restricted to whol
 nyaywala/
 ├── backend/
 │   ├── index.js
+│   ├── contract.js
+│   ├── .env.example
 │   └── package.json
 ├── frontend/
 │   ├── src/
@@ -187,8 +195,9 @@ The final report should include the score, individual analyzer results, compiler
 - [x] Execution-limit controls
 - [x] C-file upload and source editor
 - [x] Report layout and reproducibility explanation
-- [ ] Connect the frontend to `/api/grade`
-- [ ] Implement compilation and compiler diagnostics
+- [x] Connect the frontend to `/api/grade`
+- [x] Implement compilation and compiler diagnostics
+- [x] Implement backend validation, normalization, limits, and reproducibility hashes
 - [ ] Implement isolated execution
 - [ ] Implement correctness and code analyzers
 - [ ] Persist sample rules and problem data
